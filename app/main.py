@@ -5,8 +5,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -18,7 +16,6 @@ from app.core.exceptions import AppError, AuthRequiredError
 from app.core.logging import configure_logging
 from app.db.session import build_engine, build_session_factory
 from app.notifiers import build_notifier
-from app.scheduler.jobs import check_prices_job
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Startup: engine/session factory. Shutdown: dispose engine."""
+    """Startup: engine/session factory, notifier, auth. Shutdown: cleanup."""
     settings = get_settings()
     configure_logging(settings.log_level)
 
@@ -46,26 +43,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.exception("Could not fetch bot username")
 
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(
-        check_prices_job,
-        trigger=IntervalTrigger(minutes=settings.scheduler_interval_minutes),
-        args=[app.state.session_factory, notifier, settings],
-        id="price_check",
-        max_instances=1,
-        coalesce=True,
-    )
-    scheduler.start()
-    app.state.scheduler = scheduler
-    logger.info(
-        "Application started (env=%s, price check every %d min)",
-        settings.environment,
-        settings.scheduler_interval_minutes,
-    )
+    logger.info("Application started (env=%s)", settings.environment)
 
     yield
 
-    scheduler.shutdown(wait=False)
     await notifier.close()
     await engine.dispose()
 

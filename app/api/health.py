@@ -2,10 +2,12 @@
 
 import logging
 
-from fastapi import APIRouter, Request
+import redis.asyncio as aioredis
+from fastapi import APIRouter
 from sqlalchemy import text
 
 from app.api.deps import SessionDep
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +15,8 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/health")
-async def health(request: Request, session: SessionDep) -> dict[str, str]:
-    """Report API, database and scheduler status."""
+async def health(session: SessionDep) -> dict[str, str]:
+    """Report API, database and task-queue (Redis) status."""
     try:
         await session.execute(text("SELECT 1"))
         db_status = "ok"
@@ -22,8 +24,17 @@ async def health(request: Request, session: SessionDep) -> dict[str, str]:
         logger.exception("Health check: database probe failed")
         db_status = "error"
 
-    scheduler = getattr(request.app.state, "scheduler", None)
-    scheduler_status = (
-        "running" if scheduler is not None and scheduler.running else "stopped"
-    )
+    try:
+        redis_client = aioredis.from_url(
+            get_settings().redis_url,
+            socket_timeout=1,
+            socket_connect_timeout=1,
+        )
+        await redis_client.ping()
+        await redis_client.aclose()
+        scheduler_status = "running"
+    except Exception:
+        logger.warning("Health check: Redis ping failed")
+        scheduler_status = "stopped"
+
     return {"status": "ok", "db": db_status, "scheduler": scheduler_status}

@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     scheduler_interval_minutes: int = 180
     alert_cooldown_hours: int = 24
+    redis_url: str = "redis://localhost:6379/0"
 
     environment: str = "development"
     log_level: str = "INFO"
