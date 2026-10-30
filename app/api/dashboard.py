@@ -13,6 +13,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 
+from app.api.auth import require_user
 from app.api.deps import SessionDep, get_price_service
 from app.core.exceptions import AppError
 from app.models.enums import ProductSource
@@ -23,7 +24,7 @@ from app.services.product import ProductService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["dashboard"])
+router = APIRouter(tags=["dashboard"], dependencies=[Depends(require_user)])
 
 templates = Jinja2Templates(
     directory=Path(__file__).resolve().parent.parent / "templates"
@@ -52,6 +53,7 @@ async def index(request: Request, session: SessionDep):
             "products": products,
             "last_checked": last_checked,
             "error": request.query_params.get("error"),
+            "auth_enabled": getattr(request.app.state, "auth_enabled", False),
         },
     )
 
@@ -114,6 +116,7 @@ async def product_detail(product_id: UUID, request: Request, session: SessionDep
             "chart_labels": chart_labels,
             "chart_data": chart_data,
             "error": request.query_params.get("error"),
+            "auth_enabled": getattr(request.app.state, "auth_enabled", False),
         },
     )
 

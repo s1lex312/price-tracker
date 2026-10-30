@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход — Price Tracker</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container container-narrow">
+  <h1>Price Tracker</h1>
+
+  {% if error %}
+  <div class="banner banner-error">
+    Не удалось подтвердить подпись Telegram. Попробуйте ещё раз.
+  </div>
+  {% endif %}
+
+  <section class="card login-card">
+    <h2>Вход через Telegram</h2>
+    {% if bot_username %}
+    <script async src="https://telegram.org/js/telegram-widget.js?22"
+            data-telegram-login="{{ bot_username }}"
+            data-size="large"
+            data-auth-url="/auth/telegram"
+            data-request-access="write"></script>
+    <p class="empty">Авторизация нужна только для дашборда.</p>
+    {% else %}
+    <p class="empty">
+      Бот не настроен. Задайте ALERT_BOT_TOKEN, привяжите домен
+      через @BotFather (/setdomain) и перезапустите приложение.
+    </p>
+    {% endif %}
+  </section>
+</div>
+</body>
+</html>

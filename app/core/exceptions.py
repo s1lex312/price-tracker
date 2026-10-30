@@ -26,6 +26,13 @@ class BadRequestError(AppError):
     detail = "Bad request"
 
 
+class AuthRequiredError(AppError):
+    """Dashboard access requires an authenticated session."""
+
+    status_code = 401
+    detail = "Authentication required"
+
+
 class ExternalServiceError(AppError):
     """Upstream price source failed."""
 

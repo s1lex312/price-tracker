@@ -8,12 +8,13 @@ from pathlib import Path
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
-from app.api import dashboard, health, products
+from app.api import auth, dashboard, health, products
 from app.core.config import get_settings
-from app.core.exceptions import AppError
+from app.core.exceptions import AppError, AuthRequiredError
 from app.core.logging import configure_logging
 from app.db.session import build_engine, build_session_factory
 from app.notifiers.telegram import TelegramNotifier
@@ -35,6 +36,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     notifier = TelegramNotifier(settings.alert_bot_token)
     app.state.notifier = notifier
+
+    # Dashboard auth via Telegram Login Widget; disabled without a token
+    app.state.auth_enabled = bool(settings.alert_bot_token)
+    app.state.bot_username = None
+    if app.state.auth_enabled:
+        try:
+            app.state.bot_username = await notifier.get_bot_username()
+        except Exception:
+            logger.exception("Could not fetch bot username")
 
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
@@ -62,7 +72,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     """Assemble the FastAPI application."""
+    settings = get_settings()
     app = FastAPI(title="Price Tracker", version="1.0.0", lifespan=lifespan)
+    app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+
+    @app.exception_handler(AuthRequiredError)
+    async def auth_required_handler(
+        request: Request, exc: AuthRequiredError
+    ) -> RedirectResponse:
+        return RedirectResponse("/login", status_code=303)
 
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
@@ -70,6 +88,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router, prefix="/api/v1")
     app.include_router(products.router, prefix="/api/v1")
+    app.include_router(auth.router)
     app.include_router(dashboard.router)
     app.mount(
         "/static",

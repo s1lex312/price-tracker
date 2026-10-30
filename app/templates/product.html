@@ -9,7 +9,14 @@
 </head>
 <body>
 <div class="container">
-  <p><a href="/">&larr; ко всем товарам</a></p>
+  <div class="header-row">
+    <p><a href="/">&larr; ко всем товарам</a></p>
+    {% if auth_enabled %}
+    <form method="post" action="/logout">
+      <button type="submit" class="btn">Выйти</button>
+    </form>
+    {% endif %}
+  </div>
   <h1>{{ product.name }}</h1>
 
   {% if error %}

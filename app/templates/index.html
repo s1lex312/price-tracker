@@ -8,7 +8,14 @@
 </head>
 <body>
 <div class="container">
-  <h1>Price Tracker</h1>
+  <div class="header-row">
+    <h1>Price Tracker</h1>
+    {% if auth_enabled %}
+    <form method="post" action="/logout">
+      <button type="submit" class="btn">Выйти</button>
+    </form>
+    {% endif %}
+  </div>
 
   {% if error %}
   <div class="banner banner-error">{{ error }}</div>

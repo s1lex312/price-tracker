@@ -19,6 +19,8 @@ class Settings(BaseSettings):
 
     alert_bot_token: str = ""
 
+    secret_key: str = "dev-secret-change-me"
+
     scheduler_interval_minutes: int = 180
     alert_cooldown_hours: int = 24
 

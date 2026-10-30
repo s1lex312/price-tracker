@@ -32,6 +32,13 @@ class TelegramNotifier:
             chat_id=user_telegram_id, text=self._format_message(product)
         )
 
+    async def get_bot_username(self) -> str | None:
+        """Return the bot username (used by the Telegram Login Widget)."""
+        if self._bot is None:
+            return None
+        me = await self._bot.get_me()
+        return me.username
+
     async def close(self) -> None:
         """Release the bot's HTTP session."""
         if self._bot is not None:

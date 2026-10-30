@@ -27,6 +27,26 @@ body {
   padding: 24px 16px 64px;
 }
 
+.container-narrow {
+  max-width: 460px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-row p {
+  margin: 0;
+}
+
+.login-card {
+  text-align: center;
+  padding: 32px 20px;
+}
+
 h1 {
   font-size: 1.6rem;
   margin: 0 0 16px;
