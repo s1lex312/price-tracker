@@ -34,29 +34,29 @@ Ozon, Wildberries и подобные маркетплейсы я не парс�
 
 ```mermaid
 flowchart LR
-    User([Пользователь]) -->|HTTP| Dashboard[FastAPI Dashboard<br/>Jinja2 + Chart.js]
-    TGLogin[Telegram Login Widget] -->|подписанный callback| Auth[/auth/telegram]
+    User(["Пользователь"]) -->|HTTP| Dashboard["FastAPI Dashboard<br/>Jinja2 + Chart.js"]
+    TGLogin["Telegram Login Widget"] -->|подписанный callback| Auth["/auth/telegram"]
     Auth -->|session cookie| Dashboard
-    User -->|REST| API[FastAPI /api/v1]
+    User -->|REST| API["FastAPI /api/v1"]
     Dashboard --> Services
     API --> Services
     subgraph App
-        Services[Сервисный слой<br/>ProductService / PriceService]
-        Repos[Репозитории<br/>SQLAlchemy 2.0 async]
-        Parsers[Парсеры<br/>books / coingecko / playwright]
+        Services["Сервисный слой<br/>ProductService / PriceService"]
+        Repos["Репозитории<br/>SQLAlchemy 2.0 async"]
+        Parsers["Парсеры<br/>books / coingecko / playwright"]
     end
     Services --> Repos
-    Repos --> DB[(PostgreSQL)]
+    Repos --> DB[("PostgreSQL")]
     Services --> Parsers
-    Parsers --> Books[books.toscrape.com]
-    Parsers --> CG[CoinGecko API]
-    Parsers --> JS[JS-сайты — headless Chromium]
-    Beat[celery beat] -->|раз в N минут| Redis[(Redis — брокер)]
-    Redis --> Worker[celery worker]
+    Parsers --> Books["books.toscrape.com"]
+    Parsers --> CG["CoinGecko API"]
+    Parsers --> JS["JS-сайты — headless Chromium"]
+    Beat["celery beat"] -->|раз в N минут| Redis[("Redis — брокер")]
+    Redis --> Worker["celery worker"]
     Worker --> Services
-    Services -->|цена <= порога| Notifier[CompositeNotifier]
-    Notifier --> TG([Telegram])
-    Notifier --> SMTP([Email — SMTP])
+    Services -->|цена ниже порога| Notifier["CompositeNotifier"]
+    Notifier --> TG(["Telegram"])
+    Notifier --> SMTP(["Email — SMTP"])
 ```
 
 Слои: `api` (роутеры) → `services` (бизнес-логика) → `repositories`
