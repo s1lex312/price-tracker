@@ -31,25 +31,19 @@ async def create_product(
 
 
 @router.get("/{product_id}", response_model=ProductRead)
-async def get_product(
-    product_id: UUID, service: ProductServiceDep
-) -> ProductRead:
+async def get_product(product_id: UUID, service: ProductServiceDep) -> ProductRead:
     """Get a single product."""
     return await service.get(product_id)
 
 
 @router.delete("/{product_id}", status_code=204)
-async def delete_product(
-    product_id: UUID, service: ProductServiceDep
-) -> None:
+async def delete_product(product_id: UUID, service: ProductServiceDep) -> None:
     """Delete a product and its price history."""
     await service.delete(product_id)
 
 
 @router.post("/{product_id}/refresh", response_model=ProductRead)
-async def refresh_product(
-    product_id: UUID, service: PriceServiceDep
-) -> ProductRead:
+async def refresh_product(product_id: UUID, service: PriceServiceDep) -> ProductRead:
     """Fetch the current price immediately (bypasses the scheduler)."""
     return await service.refresh_product(product_id)
 

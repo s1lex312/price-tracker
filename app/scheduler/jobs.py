@@ -36,9 +36,7 @@ async def check_prices_job(
                     session, notifier=notifier, settings=settings
                 ).refresh_product(product_id)
             except AppError as exc:
-                logger.warning(
-                    "Price check failed for %s: %s", product_id, exc.detail
-                )
+                logger.warning("Price check failed for %s: %s", product_id, exc.detail)
             else:
                 refreshed.append(product_id)
     logger.info(

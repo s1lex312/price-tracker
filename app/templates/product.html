@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ product.name }} — Price Tracker</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <p><a href="/">&larr; ко всем товарам</a></p>
+  <h1>{{ product.name }}</h1>
+
+  {% if error %}
+  <div class="banner banner-error">{{ error }}</div>
+  {% endif %}
+
+  <section class="card">
+    <dl class="props">
+      <dt>Источник</dt><dd>{{ product.source.value }}</dd>
+      <dt>URL / coin id</dt>
+      <dd>
+        {% if product.source.value == "books_toscrape" %}
+          <a href="{{ product.external_id }}">{{ product.external_id }}</a>
+        {% else %}
+          {{ product.external_id }}
+        {% endif %}
+      </dd>
+      <dt>Текущая цена</dt>
+      <dd>
+        {% if product.current_price is not none %}
+          {{ product.current_price }} {{ product.currency }}
+        {% else %}
+          ещё не проверялась
+        {% endif %}
+      </dd>
+      <dt>Целевая цена</dt>
+      <dd>{{ product.target_price }} {{ product.currency }}</dd>
+      {% if product.last_error %}
+      <dt>Последняя ошибка</dt><dd class="error-text">{{ product.last_error }}</dd>
+      {% endif %}
+    </dl>
+
+    <div class="actions-row">
+      <form method="post" action="/products/{{ product.id }}/refresh">
+        <button type="submit" class="btn btn-primary">Обновить сейчас</button>
+      </form>
+      <form method="post" action="/products/{{ product.id }}/delete"
+            onsubmit="return confirm('Удалить товар?');">
+        <button type="submit" class="btn btn-danger">Удалить</button>
+      </form>
+    </div>
+
+    <form method="post" action="/products/{{ product.id }}/target-price"
+          class="inline-form">
+      <label>Новая целевая цена
+        <input type="number" name="target_price" required
+               min="0" step="0.00000001" value="{{ product.target_price }}">
+      </label>
+      <button type="submit" class="btn">Сохранить</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>История цен</h2>
+    {% if history %}
+    <canvas id="priceChart" height="90"></canvas>
+    <script>
+      const ctx = document.getElementById("priceChart");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: {{ chart_labels | safe }},
+          datasets: [{
+            label: "Цена, {{ product.currency }}",
+            data: {{ chart_data | safe }},
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.1)",
+            fill: true,
+            tension: 0.2,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: true } },
+          scales: { y: { beginAtZero: false } }
+        }
+      });
+    </script>
+
+    <table>
+      <thead>
+        <tr><th>Время (UTC)</th><th>Цена</th></tr>
+      </thead>
+      <tbody>
+        {% for point in history %}
+        <tr>
+          <td>{{ point.checked_at.strftime("%d.%m.%Y %H:%M:%S") }}</td>
+          <td>{{ point.price }} {{ product.currency }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">История пуста. Нажмите «Обновить сейчас»,
+      чтобы снять первую точку.</p>
+    {% endif %}
+  </section>
+</div>
+</body>
+</html>

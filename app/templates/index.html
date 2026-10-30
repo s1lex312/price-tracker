@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Price Tracker</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+  <h1>Price Tracker</h1>
+
+  {% if error %}
+  <div class="banner banner-error">{{ error }}</div>
+  {% endif %}
+
+  <section class="card">
+    <h2>Добавить товар</h2>
+    <form method="post" action="/products" class="form-grid">
+      <label>Название
+        <input type="text" name="name" required maxlength="255"
+               placeholder="A Light in the Attic">
+      </label>
+      <label>Источник
+        <select name="source">
+          <option value="books_toscrape">books.toscrape.com</option>
+          <option value="coingecko">CoinGecko</option>
+        </select>
+      </label>
+      <label>URL или coin id
+        <input type="text" name="external_id" required maxlength="512"
+               placeholder="https://books.toscrape.com/catalogue/... или bitcoin">
+      </label>
+      <label>Целевая цена
+        <input type="number" name="target_price" required
+               min="0" step="0.00000001" placeholder="50.00">
+      </label>
+      <label>Валюта (пусто = по источнику)
+        <select name="currency">
+          <option value="">по умолчанию</option>
+          <option value="GBP">GBP</option>
+          <option value="USD">USD</option>
+        </select>
+      </label>
+      <label>Telegram ID для алертов
+        <input type="number" name="user_telegram_id" required
+               placeholder="123456789">
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Добавить</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Отслеживаемые товары</h2>
+    {% if products %}
+    <table>
+      <thead>
+        <tr>
+          <th>Название</th>
+          <th>Источник</th>
+          <th>Текущая цена</th>
+          <th>Целевая цена</th>
+          <th>Проверено</th>
+          <th>Статус</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td><a href="/products/{{ p.id }}">{{ p.name }}</a></td>
+          <td>{{ p.source.value }}</td>
+          <td>
+            {% if p.current_price is not none %}
+              {{ p.current_price }} {{ p.currency }}
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>
+          <td>{{ p.target_price }} {{ p.currency }}</td>
+          <td>
+            {% if p.id in last_checked %}
+              {{ last_checked[p.id].strftime("%d.%m.%Y %H:%M") }} UTC
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>
+          <td>
+            {% if p.last_error %}
+              <span class="badge badge-error" title="{{ p.last_error }}">ошибка</span>
+            {% elif p.current_price is none %}
+              <span class="badge badge-muted">нет данных</span>
+            {% elif p.current_price <= p.target_price %}
+              <span class="badge badge-below">ниже порога</span>
+            {% else %}
+              <span class="badge badge-ok">ok</span>
+            {% endif %}
+          </td>
+          <td class="actions">
+            <form method="post" action="/products/{{ p.id }}/refresh">
+              <button type="submit" class="btn">Обновить сейчас</button>
+            </form>
+            <form method="post" action="/products/{{ p.id }}/delete"
+                  onsubmit="return confirm('Удалить товар?');">
+              <button type="submit" class="btn btn-danger">Удалить</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">Пока пусто. Добавьте первый товар через форму выше.</p>
+    {% endif %}
+  </section>
+</div>
+</body>
+</html>

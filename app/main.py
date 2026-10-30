@@ -3,13 +3,15 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from app.api import health, products
+from app.api import dashboard, health, products
 from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.core.logging import configure_logging
@@ -18,6 +20,8 @@ from app.notifiers.telegram import TelegramNotifier
 from app.scheduler.jobs import check_prices_job
 
 logger = logging.getLogger(__name__)
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 @asynccontextmanager
@@ -66,6 +70,12 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router, prefix="/api/v1")
     app.include_router(products.router, prefix="/api/v1")
+    app.include_router(dashboard.router)
+    app.mount(
+        "/static",
+        StaticFiles(directory=BASE_DIR / "static"),
+        name="static",
+    )
 
     return app
 

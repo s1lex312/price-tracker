@@ -19,14 +19,11 @@ class TelegramNotifier:
     def __init__(self, token: str) -> None:
         self._bot = Bot(token=token) if token else None
 
-    async def send_price_alert(
-        self, user_telegram_id: int, product: Product
-    ) -> None:
+    async def send_price_alert(self, user_telegram_id: int, product: Product) -> None:
         """Notify a user that the product dropped to/below the target."""
         if self._bot is None:
             logger.info(
-                "ALERT_BOT_TOKEN not set, alert logged only: "
-                "%s -> telegram user %s",
+                "ALERT_BOT_TOKEN not set, alert logged only: " "%s -> telegram user %s",
                 product.name,
                 user_telegram_id,
             )
@@ -43,7 +40,7 @@ class TelegramNotifier:
     @staticmethod
     def _format_message(product: Product) -> str:
         return (
-            "🔔 Цена упала ниже порога!\n"
+            "\U0001f514 Цена упала ниже порога!\n"
             f"Товар: {product.name}\n"
             f"Текущая цена: {product.current_price} {product.currency}\n"
             f"Целевая цена: {product.target_price} {product.currency}\n"

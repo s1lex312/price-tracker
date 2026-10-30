@@ -2,8 +2,9 @@
 
 import uuid
 from collections.abc import Sequence
+from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.price_history import PriceHistory
@@ -32,3 +33,13 @@ class PriceHistoryRepository:
             .limit(limit)
         )
         return result.scalars().all()
+
+    async def latest_check_map(self) -> dict[uuid.UUID, datetime]:
+        """Map product id -> timestamp of its latest price check."""
+        result = await self._session.execute(
+            select(
+                PriceHistory.product_id,
+                func.max(PriceHistory.checked_at),
+            ).group_by(PriceHistory.product_id)
+        )
+        return {row[0]: row[1] for row in result.all()}

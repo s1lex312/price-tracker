@@ -24,8 +24,6 @@ async def health(request: Request, session: SessionDep) -> dict[str, str]:
 
     scheduler = getattr(request.app.state, "scheduler", None)
     scheduler_status = (
-        "running"
-        if scheduler is not None and scheduler.running
-        else "stopped"
+        "running" if scheduler is not None and scheduler.running else "stopped"
     )
     return {"status": "ok", "db": db_status, "scheduler": scheduler_status}
