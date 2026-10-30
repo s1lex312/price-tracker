@@ -34,7 +34,24 @@ async def test_health(client: httpx.AsyncClient) -> None:
     body = resp.json()
     assert body["status"] == "ok"
     assert body["db"] == "ok"
-    assert body["scheduler"] == "stopped"  # lifespan is off under ASGITransport
+    assert body["scheduler"] == "stopped"  # no Redis in the test env
+
+
+async def test_health_closes_redis_client_on_ping_failure(
+    client: httpx.AsyncClient, monkeypatch
+) -> None:
+    from unittest.mock import AsyncMock
+
+    redis_client = AsyncMock()
+    redis_client.ping.side_effect = ConnectionError("redis down")
+    monkeypatch.setattr(
+        "app.api.health.aioredis.from_url", lambda *a, **kw: redis_client
+    )
+
+    resp = await client.get("/api/v1/health")
+
+    assert resp.json()["scheduler"] == "stopped"
+    redis_client.aclose.assert_awaited_once()
 
 
 async def test_create_product(client: httpx.AsyncClient) -> None:

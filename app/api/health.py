@@ -24,17 +24,18 @@ async def health(session: SessionDep) -> dict[str, str]:
         logger.exception("Health check: database probe failed")
         db_status = "error"
 
+    redis_client = aioredis.from_url(
+        get_settings().redis_url,
+        socket_timeout=1,
+        socket_connect_timeout=1,
+    )
     try:
-        redis_client = aioredis.from_url(
-            get_settings().redis_url,
-            socket_timeout=1,
-            socket_connect_timeout=1,
-        )
         await redis_client.ping()
-        await redis_client.aclose()
         scheduler_status = "running"
     except Exception:
         logger.warning("Health check: Redis ping failed")
         scheduler_status = "stopped"
+    finally:
+        await redis_client.aclose()
 
     return {"status": "ok", "db": db_status, "scheduler": scheduler_status}
