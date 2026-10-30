@@ -19,6 +19,13 @@ class Settings(BaseSettings):
 
     alert_bot_token: str = ""
 
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    alert_email_to: str = ""
+
     secret_key: str = "dev-secret-change-me"
 
     scheduler_interval_minutes: int = 180

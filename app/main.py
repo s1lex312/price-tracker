@@ -17,7 +17,7 @@ from app.core.config import get_settings
 from app.core.exceptions import AppError, AuthRequiredError
 from app.core.logging import configure_logging
 from app.db.session import build_engine, build_session_factory
-from app.notifiers.telegram import TelegramNotifier
+from app.notifiers import build_notifier
 from app.scheduler.jobs import check_prices_job
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = build_engine(settings.database_url)
     app.state.session_factory = build_session_factory(engine)
 
-    notifier = TelegramNotifier(settings.alert_bot_token)
+    notifier = build_notifier(settings)
     app.state.notifier = notifier
 
     # Dashboard auth via Telegram Login Widget; disabled without a token
