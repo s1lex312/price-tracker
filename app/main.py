@@ -14,6 +14,7 @@ from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.core.logging import configure_logging
 from app.db.session import build_engine, build_session_factory
+from app.notifiers.telegram import TelegramNotifier
 from app.scheduler.jobs import check_prices_job
 
 logger = logging.getLogger(__name__)
@@ -28,11 +29,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = build_engine(settings.database_url)
     app.state.session_factory = build_session_factory(engine)
 
+    notifier = TelegramNotifier(settings.alert_bot_token)
+    app.state.notifier = notifier
+
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         check_prices_job,
         trigger=IntervalTrigger(minutes=settings.scheduler_interval_minutes),
-        args=[app.state.session_factory, None, settings],
+        args=[app.state.session_factory, notifier, settings],
         id="price_check",
         max_instances=1,
         coalesce=True,
@@ -48,6 +52,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     scheduler.shutdown(wait=False)
+    await notifier.close()
     await engine.dispose()
 
 
