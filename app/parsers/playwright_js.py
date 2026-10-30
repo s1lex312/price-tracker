@@ -36,9 +36,9 @@ class PlaywrightParser(BaseParser):
             from playwright.async_api import async_playwright
         except ImportError as exc:
             raise ParserError(
-                "playwright extra is not installed "
-                "(pip install 'price-tracker[playwright]' + "
-                "playwright install chromium)"
+                "Playwright is not installed in this image. "
+                "Start the JS-capable worker: "
+                "docker compose --profile playwright up -d"
             ) from exc
 
         async with async_playwright() as pw:

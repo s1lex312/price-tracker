@@ -59,5 +59,23 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # JS-capable worker with Chromium; only starts with --profile playwright.
+  # Requires the base image: docker compose build app
+  worker-playwright:
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    image: price-tracker-worker-playwright
+    command: celery -A app.scheduler.celery_app worker --loglevel=INFO --concurrency=2
+    env_file: .env
+    profiles:
+      - playwright
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:

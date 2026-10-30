@@ -3,13 +3,17 @@ include .env
 export
 endif
 
-.PHONY: up down migrate test lint format shell-db
+.PHONY: up down up-playwright migrate test lint format shell-db
 
 up:
 	docker compose up --build -d
 
 down:
 	docker compose down
+
+up-playwright:
+	docker compose build app
+	docker compose --profile playwright up -d --build
 
 migrate:
 	docker compose exec app alembic upgrade head

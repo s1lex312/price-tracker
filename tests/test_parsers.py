@@ -149,5 +149,5 @@ async def test_playwright_missing_extra(monkeypatch) -> None:
     monkeypatch.setitem(sys.modules, "playwright.async_api", None)
 
     parser = PlaywrightParser(retry_delay=0)
-    with pytest.raises(ParserError, match="playwright extra"):
+    with pytest.raises(ParserError, match="--profile playwright"):
         await parser.fetch_price("https://example.com", selector=".price")

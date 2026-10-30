@@ -117,9 +117,19 @@ docker compose exec app alembic upgrade head   # или: make migrate
 Открыть http://127.0.0.1.nip.io (порт 80 — так требует Telegram Login
 Widget, см. ниже) или http://localhost. Swagger API: /docs.
 
-> Образ включает Chromium для Playwright — первая сборка долгая
-> (~1.5 ГБ). Если JS-парсер не нужен, можно убрать extra
-> `playwright` из Dockerfile и source `playwright_js` из модели.
+### JS-парсер (опционально)
+
+По умолчанию образ собирается без Chromium — лёгкий и быстрый.
+Chromium нужен только товарам с source `playwright_js`:
+
+```powershell
+docker compose build app                        # базовый образ
+docker compose --profile playwright up -d --build
+```
+
+Без профиля Chromium не скачивается. Если JS-товар попадёт на воркер
+без Chromium, в карточке товара появится ошибка с подсказкой команды,
+а следующий обход повторит попытку.
 
 Авторизация в дашборде (Telegram Login Widget):
 

@@ -1,0 +1,13 @@
+# JS-capable worker image: main image + Chromium for playwright_js.
+# Build the base image first: docker compose build app
+ARG BASE_IMAGE=price-tracker-app:latest
+FROM ${BASE_IMAGE}
+
+USER root
+RUN pip install --no-cache-dir "playwright>=1.40"
+
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
+RUN playwright install --with-deps chromium && \
+    chmod -R o+rX /opt/playwright-browsers
+
+USER appuser
