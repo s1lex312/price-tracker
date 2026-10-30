@@ -47,10 +47,13 @@ def verify_telegram_auth(data: dict[str, str], bot_token: str) -> bool:
     return 0 < time.time() - auth_date < MAX_AUTH_AGE_SECONDS
 
 
-async def require_user(request: Request) -> int | None:
-    """Gate for dashboard routes; a no-op while auth is disabled."""
+async def require_user(
+    request: Request,
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> int:
+    """Gate for dashboard routes; returns the demo user when auth is off."""
     if not getattr(request.app.state, "auth_enabled", False):
-        return None
+        return settings.demo_user_id
     user_id = request.session.get("user_id")
     if user_id is None:
         raise AuthRequiredError()

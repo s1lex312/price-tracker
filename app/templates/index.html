@@ -17,6 +17,12 @@
     {% endif %}
   </div>
 
+  {% if not auth_enabled %}
+  <div class="banner banner-demo">
+    &#9888; Demo mode (AUTH_ENABLED=false). Не использовать в проде.
+  </div>
+  {% endif %}
+
   {% if error %}
   <div class="banner banner-error">{{ error }}</div>
   {% endif %}

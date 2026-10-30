@@ -34,14 +34,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     notifier = build_notifier(settings)
     app.state.notifier = notifier
 
-    # Dashboard auth via Telegram Login Widget; disabled without a token
-    app.state.auth_enabled = bool(settings.alert_bot_token)
+    # Dashboard auth via Telegram Login Widget; off without a token
+    # or when AUTH_ENABLED=false (demo mode)
+    app.state.auth_enabled = settings.auth_enabled and bool(settings.alert_bot_token)
     app.state.bot_username = None
     if app.state.auth_enabled:
         try:
             app.state.bot_username = await notifier.get_bot_username()
         except Exception:
             logger.exception("Could not fetch bot username")
+    if not settings.auth_enabled:
+        logger.warning("Demo mode: dashboard auth disabled (AUTH_ENABLED=false)")
 
     logger.info("Application started (env=%s)", settings.environment)
 

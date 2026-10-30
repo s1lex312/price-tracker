@@ -117,6 +117,19 @@ docker compose exec app alembic upgrade head   # или: make migrate
 Открыть http://127.0.0.1.nip.io (порт 80 — так требует Telegram Login
 Widget, см. ниже) или http://localhost. Swagger API: /docs.
 
+### Самый быстрый запуск (без Telegram Login)
+
+Для локального демо авторизацию можно выключить — в `.env`:
+
+```
+AUTH_ENABLED=false
+```
+
+Дальше обычный `docker compose up --build -d`, открыть
+http://localhost — дашборд работает без входа, сверху висит плашка
+про demo mode. Для продакшена: `AUTH_ENABLED=true` плюс привязка
+домена через @BotFather `/setdomain` (см. ниже).
+
 ### JS-парсер (опционально)
 
 По умолчанию образ собирается без Chromium — лёгкий и быстрый.

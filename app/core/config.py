@@ -28,6 +28,9 @@ class Settings(BaseSettings):
 
     secret_key: str = "dev-secret-change-me"
 
+    auth_enabled: bool = True
+    demo_user_id: int = 0
+
     scheduler_interval_minutes: int = 180
     alert_cooldown_hours: int = 24
     redis_url: str = "redis://localhost:6379/0"

@@ -83,6 +83,15 @@ a:hover {
   margin-bottom: 16px;
 }
 
+.banner-demo {
+  background: #fdf6e3;
+  border: 1px solid var(--below);
+  color: var(--below);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
 .error-text {
   color: var(--danger);
   word-break: break-word;
