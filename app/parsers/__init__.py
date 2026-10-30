@@ -22,6 +22,11 @@ def get_parser(source: ProductSource) -> BaseParser:
     return _PARSERS[source]()
 
 
+def get_parser_cls(source: ProductSource) -> type[BaseParser]:
+    """Return the parser class registered for the given source."""
+    return _PARSERS[source]
+
+
 __all__ = [
     "BaseParser",
     "ParserBlockedError",
@@ -29,4 +34,5 @@ __all__ = [
     "ParserNetworkError",
     "ParserStructureError",
     "get_parser",
+    "get_parser_cls",
 ]

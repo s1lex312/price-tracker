@@ -1,8 +1,9 @@
 """Product ORM model."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
+from functools import partial
 
 from sqlalchemy import BigInteger, Boolean
 from sqlalchemy import Enum as SAEnum
@@ -36,7 +37,11 @@ class Product(Base):
         UTCDateTime(), server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        UTCDateTime(), server_default=func.now(), onupdate=func.now()
+        UTCDateTime(),
+        server_default=func.now(),
+        # Client-side onupdate: the value is set in Python, so the ORM does
+        # not expire the attribute after UPDATE (avoids a lazy IO reload).
+        onupdate=partial(datetime.now, UTC),
     )
 
     history: Mapped[list[PriceHistory]] = relationship(
