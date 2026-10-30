@@ -3,7 +3,7 @@
 import enum
 
 
-class ProductSource(str, enum.Enum):
+class ProductSource(enum.StrEnum):
     """Supported price sources."""
 
     BOOKS_TOSCRAPE = "books_toscrape"

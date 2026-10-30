@@ -4,7 +4,9 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, Boolean, Enum as SAEnum, Numeric, String, func
+from sqlalchemy import BigInteger, Boolean
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, UTCDateTime
