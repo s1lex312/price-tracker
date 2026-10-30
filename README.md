@@ -1,6 +1,7 @@
 # Price Tracker
 
 ![CI](https://github.com/s1lex312/price-tracker/actions/workflows/ci.yml/badge.svg)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Добавляешь товар и целевую цену — дальше сервис сам раз в несколько
