@@ -33,6 +33,13 @@ class AuthRequiredError(AppError):
     detail = "Authentication required"
 
 
+class ConflictError(AppError):
+    """The requested operation conflicts with a running one."""
+
+    status_code = 409
+    detail = "Conflict"
+
+
 class ExternalServiceError(AppError):
     """Upstream price source failed."""
 

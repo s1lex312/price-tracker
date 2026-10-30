@@ -1,5 +1,6 @@
 """Tests for the products REST API."""
 
+import asyncio
 import uuid
 from decimal import Decimal
 
@@ -167,6 +168,24 @@ async def test_history_respects_limit(client: httpx.AsyncClient) -> None:
     )
 
     assert len(history.json()) == 2
+
+
+@respx.mock
+async def test_concurrent_refresh_returns_409(client: httpx.AsyncClient) -> None:
+    async def slow_response(request: httpx.Request) -> httpx.Response:
+        await asyncio.sleep(0.3)
+        return httpx.Response(200, text=HTML_OK)
+
+    respx.get(BOOK_URL).mock(side_effect=slow_response)
+    created = await client.post("/api/v1/products", json=PRODUCT_PAYLOAD)
+    product_id = created.json()["id"]
+
+    first, second = await asyncio.gather(
+        client.post(f"/api/v1/products/{product_id}/refresh"),
+        client.post(f"/api/v1/products/{product_id}/refresh"),
+    )
+
+    assert sorted([first.status_code, second.status_code]) == [200, 409]
 
 
 @respx.mock

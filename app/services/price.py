@@ -1,5 +1,6 @@
 """Price refreshing and threshold alerting."""
 
+import asyncio
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -7,7 +8,11 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.core.exceptions import ExternalServiceError, NotFoundError
+from app.core.exceptions import (
+    ConflictError,
+    ExternalServiceError,
+    NotFoundError,
+)
 from app.models.price_history import PriceHistory
 from app.models.product import Product
 from app.parsers import ParserError, get_parser
@@ -15,6 +20,10 @@ from app.repositories.price_history import PriceHistoryRepository
 from app.repositories.product import ProductRepository
 
 logger = logging.getLogger(__name__)
+
+# Per-product refresh locks (process-local: guards double-clicks and
+# parallel API calls within one process; the celery worker has its own).
+_refresh_locks: dict[uuid.UUID, asyncio.Lock] = {}
 
 
 class PriceService:
@@ -35,9 +44,18 @@ class PriceService:
     async def refresh_product(self, product_id: uuid.UUID) -> Product:
         """Fetch the current price, store history and maybe alert.
 
-        Parser failures are stored on the product (``last_error``) and
-        re-raised as ExternalServiceError so callers can report them.
+        Raises ConflictError when a refresh for this product is already
+        running in this process. Parser failures are stored on the
+        product (``last_error``) and re-raised as ExternalServiceError.
         """
+        lock = _refresh_locks.setdefault(product_id, asyncio.Lock())
+        if lock.locked():
+            raise ConflictError("Refresh already in progress")
+        async with lock:
+            return await self._refresh_product(product_id)
+
+    async def _refresh_product(self, product_id: uuid.UUID) -> Product:
+        """The refresh itself, called under the per-product lock."""
         product = await self._products.get(product_id)
         if product is None:
             raise NotFoundError(f"Product {product_id} not found")
