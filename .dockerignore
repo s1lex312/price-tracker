@@ -12,7 +12,6 @@ tests
 .env
 *.db
 *.sqlite3
-README.md
 LICENSE
 .pre-commit-config.yaml
 .github
