@@ -33,6 +33,7 @@ class Product(Base):
         )
     )
     external_id: Mapped[str] = mapped_column(String(512))
+    price_selector: Mapped[str | None] = mapped_column(String(255))
     target_price: Mapped[Decimal] = mapped_column(Numeric(18, 8))
     current_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 8))
     currency: Mapped[str] = mapped_column(String(8))

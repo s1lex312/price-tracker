@@ -21,6 +21,7 @@ class ProductCreate(BaseModel):
     target_price: Decimal = Field(gt=0)
     currency: str | None = Field(default=None, max_length=8)
     user_telegram_id: int
+    price_selector: str | None = Field(default=None, max_length=255)
 
     @field_validator("external_id")
     @classmethod
@@ -36,6 +37,19 @@ class ProductCreate(BaseModel):
                     "external_id must be a CoinGecko coin id "
                     "(lowercase slug, e.g. 'bitcoin')"
                 )
+        elif source == ProductSource.PLAYWRIGHT_JS:
+            if not value.startswith(("http://", "https://")):
+                raise ValueError("external_id must be a page URL")
+        return value
+
+    @field_validator("price_selector")
+    @classmethod
+    def check_price_selector(
+        cls, value: str | None, info: ValidationInfo
+    ) -> str | None:
+        """playwright_js products need a CSS selector for the price."""
+        if info.data.get("source") == ProductSource.PLAYWRIGHT_JS and not value:
+            raise ValueError("price_selector is required for source playwright_js")
         return value
 
 
@@ -55,6 +69,7 @@ class ProductRead(BaseModel):
     is_active: bool
     last_error: str | None
     last_alert_at: datetime | None
+    price_selector: str | None
     created_at: datetime
     updated_at: datetime
 

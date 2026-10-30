@@ -25,6 +25,7 @@
         <select name="source">
           <option value="books_toscrape">books.toscrape.com</option>
           <option value="coingecko">CoinGecko</option>
+          <option value="playwright_js">JS-сайт (Playwright)</option>
         </select>
       </label>
       <label>URL или coin id
@@ -45,6 +46,10 @@
       <label>Telegram ID для алертов
         <input type="number" name="user_telegram_id" required
                placeholder="123456789">
+      </label>
+      <label>CSS-селектор цены (только для JS-сайтов)
+        <input type="text" name="price_selector" maxlength="255"
+               placeholder=".price_color">
       </label>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Добавить</button>

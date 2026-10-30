@@ -14,7 +14,9 @@ class CoinGeckoParser(BaseParser):
     source = ProductSource.COINGECKO
     currency = "USD"
 
-    async def fetch_price(self, external_id: str) -> Decimal:
+    async def fetch_price(
+        self, external_id: str, *, selector: str | None = None
+    ) -> Decimal:
         """Fetch the USD price for a coin id (e.g. ``bitcoin``)."""
         response = await self._get(
             API_URL, params={"ids": external_id, "vs_currencies": "usd"}

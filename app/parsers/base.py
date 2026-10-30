@@ -1,12 +1,15 @@
 """Abstract parser interface and parser exceptions."""
 
 import asyncio
+import re
 from abc import ABC, abstractmethod
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import httpx
 
 from app.models.enums import ProductSource
+
+_NON_NUMERIC = re.compile(r"[^0-9.]")
 
 
 class ParserError(Exception):
@@ -25,11 +28,22 @@ class ParserStructureError(ParserError):
     """Response received, but the price could not be extracted from it."""
 
 
+def extract_price(raw_text: str) -> Decimal:
+    """Parse a Decimal price out of raw text, ignoring currency symbols."""
+    cleaned = _NON_NUMERIC.sub("", raw_text)
+    if not cleaned:
+        raise ParserStructureError(f"No numeric price in {raw_text!r}")
+    try:
+        return Decimal(cleaned)
+    except InvalidOperation as exc:
+        raise ParserStructureError(f"Cannot parse price {cleaned!r}") from exc
+
+
 class BaseParser(ABC):
     """Abstract price parser with retrying HTTP GET helper."""
 
     source: ProductSource
-    currency: str
+    currency: str | None = None  # None = must be supplied by the user
 
     def __init__(
         self,
@@ -43,8 +57,13 @@ class BaseParser(ABC):
         self._retry_delay = retry_delay
 
     @abstractmethod
-    async def fetch_price(self, external_id: str) -> Decimal:
-        """Fetch the current price for the given external identifier."""
+    async def fetch_price(
+        self, external_id: str, *, selector: str | None = None
+    ) -> Decimal:
+        """Fetch the current price for the given external identifier.
+
+        ``selector`` is only used by browser-based parsers (playwright_js).
+        """
         ...
 
     async def _get(

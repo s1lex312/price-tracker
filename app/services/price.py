@@ -44,7 +44,9 @@ class PriceService:
 
         parser = get_parser(product.source)
         try:
-            price = await parser.fetch_price(product.external_id)
+            price = await parser.fetch_price(
+                product.external_id, selector=product.price_selector
+            )
         except ParserError as exc:
             product.last_error = str(exc)
             await self._session.commit()

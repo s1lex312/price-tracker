@@ -65,6 +65,45 @@ async def test_create_coingecko_defaults_to_usd(
     assert resp.json()["currency"] == "USD"
 
 
+PLAYWRIGHT_PAYLOAD = {
+    "name": "JS book",
+    "source": "playwright_js",
+    "external_id": BOOK_URL,
+    "target_price": "60.00",
+    "currency": "GBP",
+    "price_selector": ".price_color",
+    "user_telegram_id": 123456,
+}
+
+
+async def test_create_playwright_product(client: httpx.AsyncClient) -> None:
+    resp = await client.post("/api/v1/products", json=PLAYWRIGHT_PAYLOAD)
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["price_selector"] == ".price_color"
+    assert data["currency"] == "GBP"
+
+
+async def test_create_playwright_requires_selector(
+    client: httpx.AsyncClient,
+) -> None:
+    payload = {**PLAYWRIGHT_PAYLOAD, "price_selector": None}
+    resp = await client.post("/api/v1/products", json=payload)
+
+    assert resp.status_code == 422
+
+
+async def test_create_playwright_requires_currency(
+    client: httpx.AsyncClient,
+) -> None:
+    payload = {**PLAYWRIGHT_PAYLOAD, "currency": None}
+    resp = await client.post("/api/v1/products", json=payload)
+
+    assert resp.status_code == 400
+    assert "currency" in resp.json()["detail"]
+
+
 async def test_get_product_not_found(client: httpx.AsyncClient) -> None:
     missing_id = uuid.uuid4()
     resp = await client.get(f"/api/v1/products/{missing_id}")

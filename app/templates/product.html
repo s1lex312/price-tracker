@@ -27,6 +27,9 @@
           {{ product.external_id }}
         {% endif %}
       </dd>
+      {% if product.price_selector %}
+      <dt>CSS-селектор</dt><dd>{{ product.price_selector }}</dd>
+      {% endif %}
       <dt>Текущая цена</dt>
       <dd>
         {% if product.current_price is not none %}

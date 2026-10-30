@@ -65,9 +65,7 @@ async def test_job_writes_history_and_updates_price(session_factory) -> None:
 @respx.mock
 async def test_job_sends_alert_below_threshold(session_factory) -> None:
     respx.get(BOOK_URL).mock(return_value=httpx.Response(200, text=HTML_OK))
-    product = await create_product(
-        session_factory, target_price=Decimal("60.00")
-    )
+    product = await create_product(session_factory, target_price=Decimal("60.00"))
     notifier = AsyncMock()
 
     await check_prices_job(session_factory, notifier, make_settings())
@@ -108,9 +106,7 @@ async def test_cooldown_prevents_second_alert(session_factory) -> None:
 @respx.mock
 async def test_alert_fires_again_after_cooldown(session_factory) -> None:
     respx.get(BOOK_URL).mock(return_value=httpx.Response(200, text=HTML_OK))
-    product = await create_product(
-        session_factory, target_price=Decimal("60.00")
-    )
+    product = await create_product(session_factory, target_price=Decimal("60.00"))
     notifier = AsyncMock()
     settings = make_settings()
 
@@ -130,12 +126,8 @@ async def test_alert_fires_again_after_cooldown(session_factory) -> None:
 
 @respx.mock
 async def test_job_continues_after_parser_error(session_factory) -> None:
-    respx.get(BOOK_URL).mock(
-        return_value=httpx.Response(200, text=HTML_NO_PRICE)
-    )
-    respx.get(SECOND_BOOK_URL).mock(
-        return_value=httpx.Response(200, text=HTML_OK)
-    )
+    respx.get(BOOK_URL).mock(return_value=httpx.Response(200, text=HTML_NO_PRICE))
+    respx.get(SECOND_BOOK_URL).mock(return_value=httpx.Response(200, text=HTML_OK))
     broken = await create_product(session_factory, name="Broken book")
     healthy = await create_product(
         session_factory, name="Healthy book", external_id=SECOND_BOOK_URL

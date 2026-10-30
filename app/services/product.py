@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.models.price_history import PriceHistory
 from app.models.product import Product
 from app.parsers import get_parser_cls
@@ -26,6 +26,10 @@ class ProductService:
     async def create(self, data: ProductCreate) -> Product:
         """Create a product; currency defaults to the source parser's."""
         currency = data.currency or get_parser_cls(data.source).currency
+        if currency is None:
+            raise BadRequestError(
+                f"currency is required for source {data.source.value}"
+            )
         product = Product(
             user_telegram_id=data.user_telegram_id,
             name=data.name,
@@ -33,6 +37,7 @@ class ProductService:
             external_id=data.external_id,
             target_price=data.target_price,
             currency=currency,
+            price_selector=data.price_selector,
         )
         await self._products.create(product)
         await self._session.commit()

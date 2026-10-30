@@ -1,14 +1,11 @@
 """Parser for the books.toscrape.com training site."""
 
-import re
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from bs4 import BeautifulSoup
 
 from app.models.enums import ProductSource
-from app.parsers.base import BaseParser, ParserStructureError
-
-_NON_NUMERIC = re.compile(r"[^0-9.]")
+from app.parsers.base import BaseParser, ParserStructureError, extract_price
 
 
 class BooksToScrapeParser(BaseParser):
@@ -17,7 +14,9 @@ class BooksToScrapeParser(BaseParser):
     source = ProductSource.BOOKS_TOSCRAPE
     currency = "GBP"
 
-    async def fetch_price(self, external_id: str) -> Decimal:
+    async def fetch_price(
+        self, external_id: str, *, selector: str | None = None
+    ) -> Decimal:
         """Fetch the price from a full product page URL."""
         response = await self._get(external_id)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -26,10 +25,4 @@ class BooksToScrapeParser(BaseParser):
             raise ParserStructureError(
                 f"Price element (.price_color) not found at {external_id}"
             )
-        cleaned = _NON_NUMERIC.sub("", node.get_text(strip=True))
-        try:
-            return Decimal(cleaned)
-        except InvalidOperation as exc:
-            raise ParserStructureError(
-                f"Cannot parse price {cleaned!r} at {external_id}"
-            ) from exc
+        return extract_price(node.get_text(strip=True))

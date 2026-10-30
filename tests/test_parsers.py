@@ -1,5 +1,6 @@
-"""Tests for the books.toscrape.com and CoinGecko parsers."""
+"""Tests for the books.toscrape.com, CoinGecko and Playwright parsers."""
 
+import sys
 from decimal import Decimal
 
 import httpx
@@ -8,12 +9,15 @@ import respx
 
 from app.parsers.base import (
     ParserBlockedError,
+    ParserError,
     ParserNetworkError,
     ParserStructureError,
+    extract_price,
 )
 from app.parsers.books_toscrape import BooksToScrapeParser
 from app.parsers.coingecko import API_URL as COINGECKO_API_URL
 from app.parsers.coingecko import CoinGeckoParser
+from app.parsers.playwright_js import PlaywrightParser
 
 BOOK_URL = "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
 
@@ -111,3 +115,39 @@ async def test_coingecko_unknown_coin_id() -> None:
 
     with pytest.raises(ParserStructureError):
         await make_coingecko_parser().fetch_price("no-such-coin")
+
+
+# --- extract_price helper ---
+
+
+def test_extract_price_strips_currency_symbol() -> None:
+    assert extract_price("$51.77") == Decimal("51.77")
+
+
+def test_extract_price_dollars_with_label() -> None:
+    assert extract_price("Price: $1234.50") == Decimal("1234.50")
+
+
+def test_extract_price_no_digits() -> None:
+    with pytest.raises(ParserStructureError):
+        extract_price("no price")
+
+
+# --- Playwright parser ---
+
+
+async def test_playwright_requires_selector() -> None:
+    parser = PlaywrightParser(retry_delay=0)
+    with pytest.raises(ParserStructureError, match="price_selector"):
+        await parser.fetch_price("https://example.com")
+
+
+async def test_playwright_missing_extra(monkeypatch) -> None:
+    # sys.modules[name] = None makes `import name` raise ImportError,
+    # regardless of whether playwright is actually installed
+    monkeypatch.setitem(sys.modules, "playwright", None)
+    monkeypatch.setitem(sys.modules, "playwright.async_api", None)
+
+    parser = PlaywrightParser(retry_delay=0)
+    with pytest.raises(ParserError, match="playwright extra"):
+        await parser.fetch_price("https://example.com", selector=".price")

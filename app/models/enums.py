@@ -8,3 +8,4 @@ class ProductSource(enum.StrEnum):
 
     BOOKS_TOSCRAPE = "books_toscrape"
     COINGECKO = "coingecko"
+    PLAYWRIGHT_JS = "playwright_js"

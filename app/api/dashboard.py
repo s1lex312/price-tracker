@@ -65,6 +65,7 @@ async def create_product_form(
     target_price: Annotated[Decimal, Form()],
     user_telegram_id: Annotated[int, Form()],
     currency: Annotated[str, Form()] = "",
+    price_selector: Annotated[str, Form()] = "",
 ):
     """Handle the add-product form."""
     try:
@@ -75,6 +76,7 @@ async def create_product_form(
             target_price=target_price,
             currency=currency or None,
             user_telegram_id=user_telegram_id,
+            price_selector=price_selector or None,
         )
     except ValidationError as exc:
         message = exc.errors()[0].get("msg", "Invalid input")

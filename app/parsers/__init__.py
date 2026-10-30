@@ -10,10 +10,12 @@ from app.parsers.base import (
 )
 from app.parsers.books_toscrape import BooksToScrapeParser
 from app.parsers.coingecko import CoinGeckoParser
+from app.parsers.playwright_js import PlaywrightParser
 
 _PARSERS: dict[ProductSource, type[BaseParser]] = {
     ProductSource.BOOKS_TOSCRAPE: BooksToScrapeParser,
     ProductSource.COINGECKO: CoinGeckoParser,
+    ProductSource.PLAYWRIGHT_JS: PlaywrightParser,
 }
 
 
