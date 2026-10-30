@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     """Assemble the FastAPI application."""
     settings = get_settings()
-    app = FastAPI(title="Price Tracker", version="1.0.0", lifespan=lifespan)
+    app = FastAPI(title="Price Tracker", version="1.1.0", lifespan=lifespan)
     app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 
     @app.exception_handler(AuthRequiredError)
