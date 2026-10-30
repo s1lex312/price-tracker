@@ -114,7 +114,8 @@ docker compose up --build -d
 docker compose exec app alembic upgrade head   # или: make migrate
 ```
 
-Открыть http://localhost:8000. Swagger API: http://localhost:8000/docs.
+Открыть http://127.0.0.1.nip.io (порт 80 — так требует Telegram Login
+Widget, см. ниже) или http://localhost. Swagger API: /docs.
 
 > Образ включает Chromium для Playwright — первая сборка долгая
 > (~1.5 ГБ). Если JS-парсер не нужен, можно убрать extra
@@ -123,10 +124,14 @@ docker compose exec app alembic upgrade head   # или: make migrate
 Авторизация в дашборде (Telegram Login Widget):
 
 1. Впиши `ALERT_BOT_TOKEN` в `.env`.
-2. У @BotFather: `/setdomain` → выбрать бота → указать домен
-   (для локалки — `localhost`).
-3. Перезапустить: `docker compose up -d --build app`.
-4. Открыть http://localhost:8000 — появится кнопка «Log in with Telegram».
+2. У @BotFather: `/setdomain` → выбрать бота → отправить домен
+   **без протокола и порта**. `localhost` BotFather не принимает,
+   для локалки используй wildcard-DNS: `127.0.0.1.nip.io`
+   (резолвится в 127.0.0.1).
+3. Приложение слушает порт 80 нарочно: Telegram в CSP виджета шлёт
+   `frame-ancestors` без порта, и origin страницы должен совпадать
+   точно. Открывай http://127.0.0.1.nip.io (без :8000!).
+4. На странице логина появится кнопка «Log in with Telegram».
 
 Без `ALERT_BOT_TOKEN` auth отключён и дашборд открыт (dev-режим).
 
@@ -240,9 +245,12 @@ Playwright без установленного extra), CRUD API, дашборд-
 - **`docker compose exec app alembic upgrade head` падает с
   `connection refused`** — Postgres ещё не поднялся. Дождаться
   `docker compose ps` → `db (healthy)` и повторить.
-- **Виджет Telegram не рисуется / кнопка не работает** — домен не
-  привязан: @BotFather → `/setdomain` → `localhost`. После смены
-  домена виджет начинает работать сразу.
+- **Виджет Telegram не рисуется (пустое место вместо кнопки)** —
+  в консоли браузера ошибка CSP `frame-ancestors`. Причины:
+  домен не привязан (@BotFather → `/setdomain` → `127.0.0.1.nip.io`),
+  страница открыта не по тому домену (нужен именно
+  `http://127.0.0.1.nip.io`, не `localhost`), либо открыт не порт 80 —
+  Telegram не включает порт в CSP-разрешение.
 - **«Не удалось подтвердить подпись Telegram»** — чужой или устаревший
   callback; открой `/login` и пройди виджет заново (auth_date живёт 24ч).
 - **После смены `POSTGRES_PASSWORD` приложение не видит БД** — пароль

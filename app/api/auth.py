@@ -59,14 +59,25 @@ async def require_user(request: Request) -> int | None:
 
 @router.get("/login")
 async def login_page(request: Request):
-    """Render the login page with the Telegram widget."""
+    """Render the login page with the Telegram widget.
+
+    The bot username is fetched lazily and cached: Telegram API access
+    may flap at startup, and a restart should not be required to heal.
+    """
     if not getattr(request.app.state, "auth_enabled", False):
         return RedirectResponse("/", status_code=303)
+    bot_username = getattr(request.app.state, "bot_username", None)
+    if bot_username is None:
+        try:
+            bot_username = await request.app.state.notifier.get_bot_username()
+            request.app.state.bot_username = bot_username
+        except Exception:
+            logger.warning("Login page: Telegram API unreachable", exc_info=True)
     return templates.TemplateResponse(
         request,
         "login.html",
         {
-            "bot_username": getattr(request.app.state, "bot_username", None),
+            "bot_username": bot_username,
             "error": request.query_params.get("error"),
         },
     )

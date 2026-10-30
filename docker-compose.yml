@@ -29,7 +29,9 @@ services:
     build: .
     env_file: .env
     ports:
-      - "8000:8000"
+      # Порт 80: Telegram Login Widget шлёт CSP frame-ancestors без порта,
+      # поэтому с доменом из BotFather origin должен совпадать точно
+      - "80:8000"
     depends_on:
       db:
         condition: service_healthy

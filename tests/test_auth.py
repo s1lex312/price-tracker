@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import time
 from collections.abc import AsyncIterator
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -138,3 +139,47 @@ async def test_api_stays_open_without_session(
 ) -> None:
     resp = await auth_client.get("/api/v1/products")
     assert resp.status_code == 200
+
+
+# --- lazy bot-username fetch (Telegram API flaps) ---
+
+
+async def build_client(session_factory, notifier) -> AsyncClient:
+    """Client with auth enabled and a mocked notifier."""
+    app = create_app()
+
+    async def override_get_session() -> AsyncIterator:
+        async with session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        alert_bot_token=TEST_TOKEN
+    )
+    app.state.auth_enabled = True
+    app.state.bot_username = None  # simulate startup-time API failure
+    app.state.notifier = notifier
+    return AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
+
+
+async def test_login_page_lazy_fetches_bot_username(session_factory) -> None:
+    notifier = AsyncMock()
+    notifier.get_bot_username = AsyncMock(return_value="lazy_bot")
+    async with await build_client(session_factory, notifier) as client:
+        resp = await client.get("/login")
+
+    assert resp.status_code == 200
+    assert "lazy_bot" in resp.text
+    notifier.get_bot_username.assert_awaited_once()
+
+
+async def test_login_page_when_telegram_api_down(session_factory) -> None:
+    notifier = AsyncMock()
+    notifier.get_bot_username = AsyncMock(
+        side_effect=RuntimeError("api.telegram.org unreachable")
+    )
+    async with await build_client(session_factory, notifier) as client:
+        resp = await client.get("/login")
+
+    assert resp.status_code == 200
+    assert "Не удалось достучаться" in resp.text
