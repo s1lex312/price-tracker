@@ -3,7 +3,7 @@
 ![CI](https://github.com/s1lex312/price-tracker/actions/workflows/ci.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Я сделал этот пет-проект, чтобы собрать в одном месте привычный мне стек
+Я сделал этот проект, чтобы собрать в одном месте привычный мне стек
 (FastAPI + SQLAlchemy 2.0 async + Celery + aiogram) на задаче, которой
 можно реально пользоваться: сервис следит за ценами, хранит их историю
 и шлёт уведомление в Telegram и на email, когда цена падает ниже порога.
