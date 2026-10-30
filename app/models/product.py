@@ -24,7 +24,13 @@ class Product(Base):
     user_telegram_id: Mapped[int] = mapped_column(BigInteger, index=True)
     name: Mapped[str] = mapped_column(String(255))
     source: Mapped[ProductSource] = mapped_column(
-        SAEnum(ProductSource, native_enum=False, length=32)
+        SAEnum(
+            ProductSource,
+            native_enum=False,
+            length=32,
+            # Store enum values ("books_toscrape"), not member names
+            values_callable=lambda e: [m.value for m in e],
+        )
     )
     external_id: Mapped[str] = mapped_column(String(512))
     target_price: Mapped[Decimal] = mapped_column(Numeric(18, 8))
