@@ -50,8 +50,10 @@ flowchart LR
     Parsers --> CG["CoinGecko API"]
     Parsers --> JS["JS-сайты — headless Chromium"]
     Beat["celery beat"] -->|раз в N минут| Redis[("Redis — брокер")]
-    Redis --> Worker["celery worker"]
+    Redis -->|"queue: default"| Worker["celery worker"]
+    Redis -->|"queue: playwright"| WorkerPW["worker-playwright<br/>(Chromium, профиль)"]
     Worker --> Services
+    WorkerPW --> Services
     Services -->|цена ниже порога| Notifier["CompositeNotifier"]
     Notifier --> TG(["Telegram"])
     Notifier --> SMTP(["Email — SMTP"])
@@ -154,9 +156,10 @@ docker compose build app                        # базовый образ
 docker compose --profile playwright up -d --build
 ```
 
-Без профиля Chromium не скачивается. Если JS-товар попадёт на воркер
-без Chromium, в карточке товара появится ошибка с подсказкой команды,
-а следующий обход повторит попытку.
+Без профиля Chromium не скачивается. JS-товары обрабатывает отдельный
+воркер в очереди `playwright`: создать такой товар без запущенного
+воркера не выйдет (API ответит 422 с командой запуска), а если воркер
+упал после создания — на главной появится баннер-напоминание.
 
 Авторизация в дашборде (Telegram Login Widget):
 

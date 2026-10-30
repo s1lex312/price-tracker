@@ -23,6 +23,13 @@
   </div>
   {% endif %}
 
+  {% if playwright_worker_missing %}
+  <div class="banner banner-error">
+    JS-товаров ждут playwright-воркер: {{ js_pending }}.
+    Запусти: <code>docker compose --profile playwright up -d</code>
+  </div>
+  {% endif %}
+
   {% if error %}
   <div class="banner banner-error">{{ error }}</div>
   {% endif %}

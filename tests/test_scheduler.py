@@ -144,3 +144,29 @@ async def test_job_continues_after_parser_error(session_factory) -> None:
 async def test_job_with_no_products(session_factory) -> None:
     refreshed = await check_prices_job(session_factory, None, make_settings())
     assert refreshed == []
+
+
+async def test_dispatch_routes_per_source(session_factory, monkeypatch) -> None:
+    from app.scheduler import celery_app as celery_module
+
+    await create_product(session_factory)  # books -> default queue
+    await create_product(
+        session_factory,
+        name="JS book",
+        source=ProductSource.PLAYWRIGHT_JS,
+        currency="GBP",
+        price_selector=".price_color",
+    )
+
+    calls = []
+    monkeypatch.setattr(
+        celery_module.refresh_product_task,
+        "apply_async",
+        lambda **kwargs: calls.append(kwargs),
+    )
+
+    count = await celery_module._dispatch(session_factory)
+
+    assert count == 2
+    queues = sorted(call["queue"] for call in calls)
+    assert queues == ["default", "playwright"]

@@ -6,9 +6,17 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import get_price_service, get_product_service
+from app.core.exceptions import UnprocessableEntityError
+from app.models.enums import ProductSource
+from app.scheduler.inspection import playwright_worker_online
 from app.schemas.product import PricePoint, ProductCreate, ProductRead
 from app.services.price import PriceService
 from app.services.product import ProductService
+
+PLAYWRIGHT_WORKER_HINT = (
+    "JS-товары требуют playwright-воркер. "
+    "Запусти: docker compose --profile playwright up -d"
+)
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -26,7 +34,15 @@ async def list_products(service: ProductServiceDep) -> list[ProductRead]:
 async def create_product(
     data: ProductCreate, service: ProductServiceDep
 ) -> ProductRead:
-    """Create a tracked product."""
+    """Create a tracked product.
+
+    playwright_js products are refused with 422 when no JS-capable
+    worker is online — otherwise they would never get a price.
+    """
+    if data.source == ProductSource.PLAYWRIGHT_JS and not (
+        await playwright_worker_online()
+    ):
+        raise UnprocessableEntityError(PLAYWRIGHT_WORKER_HINT)
     return await service.create(data)
 
 

@@ -15,9 +15,12 @@ from pydantic import ValidationError
 
 from app.api.auth import require_user
 from app.api.deps import SessionDep, get_price_service
+from app.api.products import PLAYWRIGHT_WORKER_HINT
 from app.core.exceptions import AppError
 from app.models.enums import ProductSource
 from app.repositories.price_history import PriceHistoryRepository
+from app.repositories.product import ProductRepository
+from app.scheduler.inspection import playwright_worker_online
 from app.schemas.product import ProductCreate
 from app.services.price import PriceService
 from app.services.product import ProductService
@@ -46,6 +49,14 @@ async def index(request: Request, session: SessionDep):
     service = ProductService(session)
     products = await service.list()
     last_checked = await PriceHistoryRepository(session).latest_check_map()
+
+    js_pending = await ProductRepository(session).count_active_by_source(
+        ProductSource.PLAYWRIGHT_JS
+    )
+    playwright_worker_missing = js_pending > 0 and not (
+        await playwright_worker_online()
+    )
+
     return templates.TemplateResponse(
         request,
         "index.html",
@@ -54,6 +65,8 @@ async def index(request: Request, session: SessionDep):
             "last_checked": last_checked,
             "error": request.query_params.get("error"),
             "auth_enabled": getattr(request.app.state, "auth_enabled", False),
+            "js_pending": js_pending,
+            "playwright_worker_missing": playwright_worker_missing,
         },
     )
 
@@ -83,6 +96,11 @@ async def create_product_form(
     except ValidationError as exc:
         message = exc.errors()[0].get("msg", "Invalid input")
         return _error_redirect("/", message)
+
+    if data.source == ProductSource.PLAYWRIGHT_JS and not (
+        await playwright_worker_online()
+    ):
+        return _error_redirect("/", PLAYWRIGHT_WORKER_HINT)
 
     try:
         await ProductService(session).create(data)

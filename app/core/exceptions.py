@@ -40,6 +40,13 @@ class ConflictError(AppError):
     detail = "Conflict"
 
 
+class UnprocessableEntityError(AppError):
+    """The request is well-formed but cannot be fulfilled right now."""
+
+    status_code = 422
+    detail = "Unprocessable entity"
+
+
 class ExternalServiceError(AppError):
     """Upstream price source failed."""
 

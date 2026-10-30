@@ -3,9 +3,10 @@
 import uuid
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.enums import ProductSource
 from app.models.product import Product
 
 
@@ -38,6 +39,22 @@ class ProductRepository:
             select(Product.id).where(Product.is_active.is_(True))
         )
         return result.scalars().all()
+
+    async def list_active_brief(self) -> Sequence[tuple[uuid.UUID, str]]:
+        """Return (id, source) pairs of all active products."""
+        result = await self._session.execute(
+            select(Product.id, Product.source).where(Product.is_active.is_(True))
+        )
+        return [(row[0], row[1]) for row in result.all()]
+
+    async def count_active_by_source(self, source: ProductSource) -> int:
+        """Count active products of the given source."""
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(Product)
+            .where(Product.is_active.is_(True), Product.source == source)
+        )
+        return result.scalar_one()
 
     async def delete(self, product: Product) -> None:
         """Delete a product (history rows cascade)."""

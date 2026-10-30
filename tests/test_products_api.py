@@ -3,6 +3,7 @@
 import asyncio
 import uuid
 from decimal import Decimal
+from unittest.mock import AsyncMock
 
 import httpx
 import respx
@@ -40,8 +41,6 @@ async def test_health(client: httpx.AsyncClient) -> None:
 async def test_health_closes_redis_client_on_ping_failure(
     client: httpx.AsyncClient, monkeypatch
 ) -> None:
-    from unittest.mock import AsyncMock
-
     redis_client = AsyncMock()
     redis_client.ping.side_effect = ConnectionError("redis down")
     monkeypatch.setattr(
@@ -94,13 +93,34 @@ PLAYWRIGHT_PAYLOAD = {
 }
 
 
-async def test_create_playwright_product(client: httpx.AsyncClient) -> None:
+async def test_create_playwright_product(
+    client: httpx.AsyncClient, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        "app.api.products.playwright_worker_online",
+        AsyncMock(return_value=True),
+    )
+
     resp = await client.post("/api/v1/products", json=PLAYWRIGHT_PAYLOAD)
 
     assert resp.status_code == 201
     data = resp.json()
     assert data["price_selector"] == ".price_color"
     assert data["currency"] == "GBP"
+
+
+async def test_create_playwright_product_without_worker_returns_422(
+    client: httpx.AsyncClient, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        "app.api.products.playwright_worker_online",
+        AsyncMock(return_value=False),
+    )
+
+    resp = await client.post("/api/v1/products", json=PLAYWRIGHT_PAYLOAD)
+
+    assert resp.status_code == 422
+    assert "playwright" in resp.json()["detail"]
 
 
 async def test_create_playwright_requires_selector(
@@ -113,8 +133,12 @@ async def test_create_playwright_requires_selector(
 
 
 async def test_create_playwright_requires_currency(
-    client: httpx.AsyncClient,
+    client: httpx.AsyncClient, monkeypatch
 ) -> None:
+    monkeypatch.setattr(
+        "app.api.products.playwright_worker_online",
+        AsyncMock(return_value=True),
+    )
     payload = {**PLAYWRIGHT_PAYLOAD, "currency": None}
     resp = await client.post("/api/v1/products", json=payload)
 

@@ -1,9 +1,16 @@
 """Smoke tests for the server-rendered dashboard."""
 
+from unittest.mock import AsyncMock
+
 import httpx
 import respx
 
-from tests.test_products_api import BOOK_URL, HTML_OK, PRODUCT_PAYLOAD
+from tests.test_products_api import (
+    BOOK_URL,
+    HTML_OK,
+    PLAYWRIGHT_PAYLOAD,
+    PRODUCT_PAYLOAD,
+)
 
 
 async def test_index_renders_empty(client: httpx.AsyncClient) -> None:
@@ -94,3 +101,23 @@ async def test_product_page_missing_redirects_home(
     resp = await client.get(f"/products/{uuid.uuid4()}", follow_redirects=True)
     assert resp.status_code == 200
     assert "Добавить товар" in resp.text
+
+
+async def test_index_shows_banner_when_playwright_worker_missing(
+    client: httpx.AsyncClient, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        "app.api.products.playwright_worker_online",
+        AsyncMock(return_value=True),
+    )
+    created = await client.post("/api/v1/products", json=PLAYWRIGHT_PAYLOAD)
+    assert created.status_code == 201
+
+    monkeypatch.setattr(
+        "app.api.dashboard.playwright_worker_online",
+        AsyncMock(return_value=False),
+    )
+    resp = await client.get("/")
+
+    assert resp.status_code == 200
+    assert "ждут playwright-воркер" in resp.text
