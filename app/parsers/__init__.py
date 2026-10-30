@@ -9,9 +9,11 @@ from app.parsers.base import (
     ParserStructureError,
 )
 from app.parsers.books_toscrape import BooksToScrapeParser
+from app.parsers.coingecko import CoinGeckoParser
 
 _PARSERS: dict[ProductSource, type[BaseParser]] = {
     ProductSource.BOOKS_TOSCRAPE: BooksToScrapeParser,
+    ProductSource.COINGECKO: CoinGeckoParser,
 }
 
 
