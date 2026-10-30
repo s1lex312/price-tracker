@@ -77,6 +77,22 @@ flowchart LR
 - pytest + pytest-asyncio + respx (моки httpx)
 - Docker + docker-compose, ruff + black + isort, pre-commit, GitHub Actions
 
+## Ядро (стабильное)
+
+- FastAPI + SQLAlchemy 2.0 async + Alembic
+- Парсеры: books.toscrape.com (HTML), CoinGecko (REST)
+- Jinja2 + Chart.js дашборд с графиком истории
+- Celery worker + beat для периодического обхода
+- Уведомления в Telegram с cooldown
+- pytest + respx, coverage ≥ 70%
+
+## Расширения (опционально)
+
+- Playwright + Chromium для JS-сайтов (профиль docker compose)
+- Email-алерты через SMTP
+- Telegram Login Widget (AUTH_ENABLED=true)
+- Demo-режим без авторизации (AUTH_ENABLED=false)
+
 ## Структура проекта
 
 ```
@@ -197,6 +213,8 @@ anti-bot (блокируют и httpx, и Playwright), нестабильная 
 | `SMTP_FROM` | `SMTP_USER` | Адрес отправителя |
 | `ALERT_EMAIL_TO` | пусто | Куда слать email-алерты |
 | `SECRET_KEY` | `dev-secret-change-me` | Подпись сессионных cookie. В проде — сменить! |
+| `AUTH_ENABLED` | `true` | `false` — дашборд без логина (demo-режим) |
+| `DEMO_USER_ID` | `0` | Фиктивный user id в demo-режиме |
 | `SCHEDULER_INTERVAL_MINUTES` | `180` | Интервал обхода товаров (celery beat), минуты |
 | `ALERT_COOLDOWN_HOURS` | `24` | Минимальный интервал между алертами по товару, часы |
 | `REDIS_URL` | `redis://localhost:6379/0` | Брокер/бэкенд Celery (в compose — `redis://redis:6379/0`) |
